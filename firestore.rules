@@ -1,0 +1,268 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId) && isEmailVerified();
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'name', 'major', 'term', 'targetGpa', 'avatarUrl', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'name', 'major', 'term', 'targetGpa', 'avatarUrl', 'language', 'theme', 'updatedAt'])
+        && data.uid is string && data.uid == userId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.major is string && data.major.size() <= 120
+        && data.term is string && data.term.size() <= 80
+        && data.targetGpa is number && data.targetGpa >= 0 && data.targetGpa <= 4.0
+        && data.avatarUrl is string && data.avatarUrl.size() <= 350000
+        && (!('email' in data) || (data.email is string && data.email.size() <= 254))
+        && (!('language' in data) || data.language in ['en', 'id', 'es', 'fr', 'zh', 'ja'])
+        && (!('theme' in data) || data.theme in ['light', 'dark'])
+        && data.updatedAt == request.time;
+    }
+
+    function isValidCourse(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'code',
+          'name',
+          'instructor',
+          'credits',
+          'targetGrade',
+          'passingGrade',
+          'passingScore',
+          'semester',
+          'assignments',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'code',
+          'name',
+          'instructor',
+          'credits',
+          'targetGrade',
+          'passingGrade',
+          'passingScore',
+          'semester',
+          'assignments',
+          'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && data.code is string && data.code.size() >= 1 && data.code.size() <= 32
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 160
+        && data.instructor is string && data.instructor.size() <= 120
+        && data.credits is number && data.credits >= 1 && data.credits <= 12
+        && data.targetGrade is number && data.targetGrade >= 0 && data.targetGrade <= 100
+        && data.passingGrade in ['A', 'AB', 'B', 'BC', 'C', 'D', 'E']
+        && data.passingScore is number && data.passingScore >= 0 && data.passingScore <= 100
+        && data.semester is number && data.semester >= 1 && data.semester <= 20
+        && data.assignments is list && data.assignments.size() <= 60
+        && (data.assignments.size() == 0 || data.assignments[0] is map)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidStudyPlan(data, userId) {
+      return data.keys().hasAll(['ownerId', 'diagnosis', 'generatedAt', 'recommendations', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'diagnosis', 'generatedAt', 'recommendations', 'updatedAt'])
+        && data.ownerId is string && data.ownerId == userId
+        && data.diagnosis is string && data.diagnosis.size() <= 3000
+        && data.generatedAt is string && data.generatedAt.size() <= 64
+        && data.recommendations is list && data.recommendations.size() <= 30
+        && (data.recommendations.size() == 0 || data.recommendations[0] is map)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidAdvisorChat(data, userId) {
+      return data.keys().hasAll(['ownerId', 'messages', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'messages', 'updatedAt'])
+        && data.ownerId is string && data.ownerId == userId
+        && data.messages is list && data.messages.size() <= 100
+        && (data.messages.size() == 0 || data.messages[0] is map)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidSubjectFile(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'courseId',
+          'courseCode',
+          'name',
+          'mimeType',
+          'size',
+          'uploadedAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'courseId',
+          'courseCode',
+          'topic',
+          'name',
+          'mimeType',
+          'size',
+          'uploadedAt',
+          'textContent',
+          'base64Data',
+          'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && data.courseId is string && data.courseId.size() >= 1 && data.courseId.size() <= 128
+        && data.courseCode is string && data.courseCode.size() >= 1 && data.courseCode.size() <= 32
+        && (!('topic' in data) || (data.topic is string && data.topic.size() <= 160))
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 255
+        && data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 100
+        && data.size is number && data.size >= 0 && data.size <= 1073741824
+        && data.uploadedAt is string && data.uploadedAt.size() >= 1 && data.uploadedAt.size() <= 64
+        && (!('textContent' in data) || (data.textContent is string && data.textContent.size() <= 120000))
+        && (!('base64Data' in data) || (data.base64Data is string && data.base64Data.size() <= 750000))
+        && data.updatedAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId);
+      allow update: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'email',
+          'name',
+          'major',
+          'term',
+          'targetGpa',
+          'avatarUrl',
+          'language',
+          'theme',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(userId) && isVerifiedOwner(userId);
+
+      match /courses/{courseId} {
+        allow get: if isValidId(userId) && isValidId(courseId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(courseId)
+          && isVerifiedOwner(userId)
+          && isValidCourse(incoming(), userId);
+        allow update: if isValidId(userId)
+          && isValidId(courseId)
+          && isVerifiedOwner(userId)
+          && isValidCourse(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'code',
+            'name',
+            'instructor',
+            'credits',
+            'targetGrade',
+            'passingGrade',
+            'passingScore',
+            'semester',
+            'assignments',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(courseId) && isVerifiedOwner(userId);
+      }
+
+      match /studyPlan/{planId} {
+        allow get: if isValidId(userId) && isValidId(planId) && isOwner(userId);
+        allow list: if false;
+        allow create: if isValidId(userId)
+          && isValidId(planId)
+          && isVerifiedOwner(userId)
+          && isValidStudyPlan(incoming(), userId);
+        allow update: if isValidId(userId)
+          && isValidId(planId)
+          && isVerifiedOwner(userId)
+          && isValidStudyPlan(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'diagnosis',
+            'generatedAt',
+            'recommendations',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(planId) && isVerifiedOwner(userId);
+      }
+
+      match /advisorChat/{chatId} {
+        allow get: if isValidId(userId) && isValidId(chatId) && isOwner(userId);
+        allow list: if false;
+        allow create: if isValidId(userId)
+          && isValidId(chatId)
+          && isVerifiedOwner(userId)
+          && isValidAdvisorChat(incoming(), userId);
+        allow update: if isValidId(userId)
+          && isValidId(chatId)
+          && isVerifiedOwner(userId)
+          && isValidAdvisorChat(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'messages',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(chatId) && isVerifiedOwner(userId);
+      }
+
+      match /subjectFiles/{fileId} {
+        allow get: if isValidId(userId) && isValidId(fileId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(fileId)
+          && isVerifiedOwner(userId)
+          && isValidSubjectFile(incoming(), userId);
+        allow update: if isValidId(userId)
+          && isValidId(fileId)
+          && isVerifiedOwner(userId)
+          && isValidSubjectFile(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'courseId',
+            'courseCode',
+            'topic',
+            'name',
+            'mimeType',
+            'size',
+            'uploadedAt',
+            'textContent',
+            'base64Data',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(fileId) && isVerifiedOwner(userId);
+      }
+    }
+  }
+}

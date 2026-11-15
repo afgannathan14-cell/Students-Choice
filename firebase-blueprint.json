@@ -1,0 +1,297 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated student profile, academic goals, and UI preferences.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the student owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Student email address from Google Auth.",
+          "maxLength": 254
+        },
+        "name": {
+          "type": "string",
+          "description": "Student display name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "major": {
+          "type": "string",
+          "description": "Academic major or program.",
+          "maxLength": 120
+        },
+        "term": {
+          "type": "string",
+          "description": "Current academic term label.",
+          "maxLength": 80
+        },
+        "targetGpa": {
+          "type": "number",
+          "description": "Target GPA on a 4.0 scale."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Profile picture URL or resized JPEG data URL.",
+          "maxLength": 350000
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred UI and Gemini response language.",
+          "enum": ["en", "id", "es", "fr", "zh", "ja"]
+        },
+        "theme": {
+          "type": "string",
+          "description": "UI color theme preference.",
+          "enum": ["light", "dark"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last profile update."
+        }
+      },
+      "required": ["uid", "name", "major", "term", "targetGpa", "avatarUrl", "updatedAt"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Enrolled subject with credit weight, passing grade standard, and graded assignments.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the student owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "description": "Subject code (e.g. MKWK 101).",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "name": {
+          "type": "string",
+          "description": "Subject title.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "instructor": {
+          "type": "string",
+          "description": "Instructor name.",
+          "maxLength": 120
+        },
+        "credits": {
+          "type": "number",
+          "description": "Course credits / SKS."
+        },
+        "targetGrade": {
+          "type": "number",
+          "description": "Target numeric percentage (0-100)."
+        },
+        "passingGrade": {
+          "type": "string",
+          "description": "Minimum passing letter grade.",
+          "enum": ["A", "AB", "B", "BC", "C", "D", "E"]
+        },
+        "passingScore": {
+          "type": "number",
+          "description": "Minimum passing percentage threshold (0-100)."
+        },
+        "semester": {
+          "type": "number",
+          "description": "Academic semester number (1-8 standard, 9+ extended)."
+        },
+        "assignments": {
+          "type": "array",
+          "description": "Bounded list of graded assessments for this subject (max 60)."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last course update."
+        }
+      },
+      "required": [
+        "ownerId",
+        "code",
+        "name",
+        "instructor",
+        "credits",
+        "targetGrade",
+        "passingGrade",
+        "passingScore",
+        "semester",
+        "assignments",
+        "updatedAt"
+      ]
+    },
+    "StudyPlan": {
+      "title": "StudyPlan",
+      "description": "Personalized Gemini study plan diagnosis and action items for the student.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the student owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "Overall academic standing summary.",
+          "maxLength": 3000
+        },
+        "generatedAt": {
+          "type": "string",
+          "description": "ISO timestamp when the plan was generated.",
+          "maxLength": 64
+        },
+        "recommendations": {
+          "type": "array",
+          "description": "Bounded list of study recommendations (max 30)."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last study plan update."
+        }
+      },
+      "required": ["ownerId", "diagnosis", "generatedAt", "recommendations", "updatedAt"]
+    },
+    "AdvisorChat": {
+      "title": "AdvisorChat",
+      "description": "Student conversation history with the Gemini academic advisor.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the student owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "messages": {
+          "type": "array",
+          "description": "Bounded list of chat messages (max 100)."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last chat update."
+        }
+      },
+      "required": ["ownerId", "messages", "updatedAt"]
+    },
+    "SubjectFile": {
+      "title": "SubjectFile",
+      "description": "Uploaded course material (syllabus, lecture notes, PDF, or slide image) for Gemini context.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the student owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Associated course ID or GENERAL.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "courseCode": {
+          "type": "string",
+          "description": "Associated subject code or GENERAL.",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "topic": {
+          "type": "string",
+          "description": "Optional topic or module label for this PDF or material.",
+          "maxLength": 160
+        },
+        "name": {
+          "type": "string",
+          "description": "Original file name.",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type of the file.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "size": {
+          "type": "number",
+          "description": "Original byte size (up to 1 GB / 1073741824 bytes)."
+        },
+        "uploadedAt": {
+          "type": "string",
+          "description": "ISO timestamp when file was uploaded.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "textContent": {
+          "type": "string",
+          "description": "Extracted text content for text-based documents.",
+          "maxLength": 120000
+        },
+        "base64Data": {
+          "type": "string",
+          "description": "Base64 payload for cloud-synced PDFs or images up to ~512 KB.",
+          "maxLength": 750000
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of upload."
+        }
+      },
+      "required": [
+        "ownerId",
+        "courseId",
+        "courseCode",
+        "name",
+        "mimeType",
+        "size",
+        "uploadedAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private student profile, GPA target, and appearance/language preferences."
+    },
+    "/users/{userId}/courses/{courseId}": {
+      "schema": { "$ref": "#/entities/Course" },
+      "description": "Student enrolled subjects, passing grade rules, and graded assignments."
+    },
+    "/users/{userId}/studyPlan/{planId}": {
+      "schema": { "$ref": "#/entities/StudyPlan" },
+      "description": "Student personalized study plan and completion progress."
+    },
+    "/users/{userId}/advisorChat/{chatId}": {
+      "schema": { "$ref": "#/entities/AdvisorChat" },
+      "description": "Student Academic Advisor chat thread."
+    },
+    "/users/{userId}/subjectFiles/{fileId}": {
+      "schema": { "$ref": "#/entities/SubjectFile" },
+      "description": "Uploaded subject materials synced for Study Plan and Academic Advisor."
+    }
+  }
+}

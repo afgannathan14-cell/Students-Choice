@@ -1,0 +1,8 @@
+{
+  "name": "Students Choice",
+  "description": "Minimalist student academic dashboard tracking grades, GPA trajectory, and personalized Gemini study recommendations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
